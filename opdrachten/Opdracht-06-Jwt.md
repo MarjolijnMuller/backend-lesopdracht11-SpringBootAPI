@@ -1,4 +1,4 @@
-# Authenticatie van Basic naar JWT
+# Gedetailleerd Stappenplan - Authenticatie van Basic naar JWT
 
 ## Stap 1: Toevoegen van benodigde dependencies
 
@@ -551,17 +551,17 @@ en vervolgens een beveiligd endpoint benaderen met dat token.
 #### 1. **Inloggen en een token verkrijgen**
 
 1. Open Postman en voeg een nieuwe POST-request toe met de volgende configuratie:
-    - **URL:** `{{baseUrl}}/login`
-    - **Methode:** POST
-    - **Headers:**
-        - `Content-Type`: `application/json`
-    - **Body (raw):**
-      ```json
-      {
-          "userName": "user",
-          "password": "user"
-      }
-      ```
+   - **URL:** `{{baseUrl}}/login`
+   - **Methode:** POST
+   - **Headers:**
+      - `Content-Type`: `application/json`
+   - **Body (raw):**
+     ```json
+     {
+         "userName": "user",
+         "password": "user"
+     }
+     ```
 
 2. Klik op "Send". Als de inloggegevens correct zijn, ontvang je een JWT-token in de response-header met de
    sleutel `Authorization`. Het ziet er als volgt uit:
@@ -574,12 +574,12 @@ en vervolgens een beveiligd endpoint benaderen met dat token.
 #### 2. **Een beveiligd endpoint benaderen**
 
 1. Voeg een nieuwe GET-request toe in Postman om een beveiligd endpoint te testen. Gebruik bijvoorbeeld:
-    - **URL:** `{{baseUrl}}/cars`
-    - **Methode:** GET
+   - **URL:** `{{baseUrl}}/cars`
+   - **Methode:** GET
 
 2. Voeg de volgende headers toe:
-    - `Content-Type`: `application/json`
-    - `Authorization`: `Bearer <gekopieerd-token>`
+   - `Content-Type`: `application/json`
+   - `Authorization`: `Bearer <gekopieerd-token>`
 
 3. Klik op "Send". Als het token geldig is en de gebruiker de juiste rechten heeft, ontvang je een response met de
    gegevens van het beveiligde endpoint.
@@ -596,8 +596,8 @@ en vervolgens een beveiligd endpoint benaderen met dat token.
    ```
 
 2. In beveiligde requests kun je nu verwijzen naar het opgeslagen token:
-    - Voeg de header toe:
-        - `Authorization`: `Bearer {{token}}`
+   - Voeg de header toe:
+      - `Authorization`: `Bearer {{token}}`
 
 3. Klik op "Send" en controleer of het token correct wordt gebruikt.
 

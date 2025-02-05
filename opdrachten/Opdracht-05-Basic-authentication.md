@@ -1,11 +1,42 @@
+# **Voeg Basic Authentication toe aan je Spring Boot-applicatie**
 
-# Beveiliging
+In deze opdracht breid je je Spring Boot-project uit met **Basic Authentication** door gebruik te maken van **Spring Security**. Je leert hoe je gebruikers kunt beheren en toegang kunt beveiligen.
 
-## **Stap 1: Maak een User Entity**
+**Uitdaging**: Probeer elke stap zelf te implementeren voordat je de uitwerking bekijkt. Gebruik de hints als je vastzit.
 
-Maak een User-entity om gebruikers in de database op te slaan.
+---
 
-**Bestand:** `src/main/java/nl/novi/cardemo/models/User.java`
+## **Stap 1: Spring Security toevoegen**
+Om beveiliging in je project in te schakelen, moet je eerst de benodigde dependency toevoegen.
+
+1. Open het bestand `pom.xml`.
+2. Voeg de volgende dependency toe binnen `<dependencies>`:
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+```
+
+3. **Herstart je project** om de dependency te laden.
+
+**Hint:** Als je je applicatie opnieuw start en `/cars` opent, zal Spring Security nu om inloggegevens vragen.
+
+---
+
+## **Stap 2: Maak een `User` modelklasse**
+Om gebruikers op te slaan, maken we een **`User`**-klasse.
+
+1. Maak in de package `models` een nieuwe klasse `User` aan.
+2. Voeg de volgende velden toe:
+    - `id` (Long, primary key)
+    - `username` (String, uniek en verplicht)
+    - `password` (String, verplicht)
+    - `role` (String, verplicht)
+
+<details>
+<summary>Uitwerking</summary>
 
 ```java
 package nl.novi.cardemo.models;
@@ -30,199 +61,116 @@ public class User {
     private String role;
 
     // Getters en setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 }
 ```
+</details>
+
+**Hint:** Zorg ervoor dat je de `jakarta.persistence`-annotaties gebruikt voor Entity-mapping.
 
 ---
 
-## **Stap 2: Maak een UserRepository**
+## **Stap 4: Maak een `UserRepository`**
+Om gebruikers op te slaan en op te halen, maken we een repository-interface.
 
-Voeg een repository toe om gebruikers uit de database te laden.
+1. Maak in de package `repositories` een nieuwe interface `UserRepository`.
+2. Laat de interface `JpaRepository<User, Long>` implementeren.
 
-**Bestand:** `src/main/java/nl/novi/cardemo/repositories/UserRepository.java`
+<details>
+<summary>Uitwerking</summary>
 
 ```java
 package nl.novi.cardemo.repositories;
 
 import nl.novi.cardemo.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
 }
 ```
+</details>
+
+**Hint:** De methode `findByUsername` wordt gebruikt voor authenticatie.
 
 ---
 
-## **Stap 3: Implementeer een UserDetailsService**
+Je hebt nu Basic Authentication toegevoegd aan je Spring Boot-project.
 
-Maak een service die Spring Security kan gebruiken om gebruikers te laden.
+## **Stap 4: Beveiligde API configureren**
+In Spring Security moeten we aangeven welke endpoints beveiligd zijn en hoe gebruikers worden geverifieerd.
 
-**Bestand:** `src/main/java/nl/novi/cardemo/services/UserDetailsServiceImpl.java`
+1. Maak een nieuwe klasse `SecurityConfig` in de package `config`.
+2. Voeg een configuratie toe voor beveiliging.
 
-```java
-package nl.novi.cardemo.services;
-
-import nl.novi.cardemo.models.User;
-import nl.novi.cardemo.repositories.UserRepository;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Service;
-
-@Service
-public class UserDetailsServiceImpl implements UserDetailsService {
-
-    private final UserRepository userRepository;
-
-    public UserDetailsServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Gebruiker niet gevonden: " + username));
-
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .roles(user.getRole())
-                .build();
-    }
-}
-```
-
-Voeg ook de juiste dependecies toe
-````xml
- <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-security</artifactId>
-    </dependency>
-````
-
----
-
-## **Stap 4: Voeg een beveiligingsconfiguratie toe**
-
-Pas Spring Security aan om toegangsbeheer en authenticatie te configureren.
-
-**Bestand:** `src/main/java/nl/novi/cardemo/config/SecurityConfig.java`
+<details>
+<summary>Uitwerking</summary>
 
 ```java
 package nl.novi.cardemo.config;
 
-import nl.novi.cardemo.services.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
-
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
-   private final UserDetailsServiceImpl userDetailsService;
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-   public SecurityConfig(UserDetailsServiceImpl userDetailsService) {
-      this.userDetailsService = userDetailsService;
-   }
-
-   @Bean
-   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-      http
-              .httpBasic(Customizer.withDefaults())
-              .authorizeHttpRequests(auth -> auth
-                      // Publieke endpoints
-                      .requestMatchers("/api-docs/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                      .requestMatchers(HttpMethod.GET, "/cars").hasAnyRole("USER")
-
-                      // Beveiligde endpoints: Alleen voor admins
-                      .requestMatchers(HttpMethod.POST, "/cars/**").hasRole("ADMIN")
-                      .requestMatchers(HttpMethod.PUT, "/cars/**").hasRole("ADMIN")
-                      .requestMatchers(HttpMethod.DELETE, "/cars/**").hasRole("ADMIN")
-
-                      .requestMatchers(HttpMethod.GET, "/cars/{carId}/carregistrations/**").hasRole("ADMIN")
-                      .requestMatchers(HttpMethod.POST, "/cars/{carId}/carregistrations/**").hasRole("ADMIN")
-                      .requestMatchers(HttpMethod.PUT, "/cars/{carId}/carregistrations/**").hasRole("ADMIN")
-                      .requestMatchers(HttpMethod.DELETE, "/cars/{carId}/carregistrations/**").hasRole("ADMIN")
-
-                      // Andere verzoeken worden geweigerd
-                      .anyRequest().denyAll()
-              )
-              .csrf(csrf -> csrf.disable())
-              .cors(cors -> {
-              })
-              .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-      ;
-      return http.build();
-   }
-
-   @Bean
-   public PasswordEncoder passwordEncoder() {
-      return new BCryptPasswordEncoder();
-   }
-
-   @Bean
-   public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-      var builder = http.getSharedObject(AuthenticationManagerBuilder.class);
-      builder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
-
-      return builder.build();
-   }
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/cars").authenticated()
+                .anyRequest().permitAll()
+            )
+            .httpBasic();
+        return http.build();
+    }
 }
 ```
+</details>
+
+**Hint:**
+- **`/cars`** is nu beveiligd en vereist authenticatie.
+- **Andere endpoints** blijven publiek toegankelijk.
+- **BCryptPasswordEncoder** wordt gebruikt voor veilige wachtwoordopslag.
 
 ---
 
-## **Stap 5: Voeg gebruikers toe aan data.sql**
 
-Om gebruikers toe te voegen, gebruik je `data.sql`. Versleutel je wachtwoord met het volgende programma:
 
-**Wachtwoord Versleutelen:**
+
+## **Stap 5: Wachtwoord versleutelen met een helper**
+
+Om wachtwoorden veilig in de database op te slaan, gebruiken we **BCryptPasswordEncoder**. Dit zorgt ervoor dat wachtwoorden gehasht worden en niet als platte tekst in de database staan.
+
+1. Maak een nieuwe package genaamd `utils`.
+2. Maak in deze package een klasse `PasswordEncoderUtil` aan.
+3. Voeg de volgende code toe:
+
+<details>
+<summary>Uitwerking</summary>
 
 ```java
+package nl.novi.cardemo.utils;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class PasswordEncoderUtil {
@@ -234,36 +182,44 @@ public class PasswordEncoderUtil {
     }
 }
 ```
+</details>
 
-Gebruik de uitvoer om het geëncodeerde wachtwoord toe te voegen in `data.sql`:
+### **Wat doet deze helper?**
+- Je kunt hiermee een wachtwoord invoeren en de gehashte versie genereren.
+- Kopieer de gehashte versie en gebruik deze in je database.
+- Elke keer dat je een wachtwoord invoert, wordt het anders gehasht (maar blijft hetzelfde te valideren).
 
-```sql
-INSERT INTO users (username, password, role) VALUES ('admin', '$2a$10$4tU5m...', 'ADMIN');
-INSERT INTO users (username, password, role) VALUES ('user', '$2a$10$...', 'USER');
-```
+**Hint:** Run deze klasse en vervang `jouw-wachtwoord` door een echt wachtwoord dat je wilt gebruiken.
 
 ---
 
-## **Stap 6: Testen met Postman**
+## **Stap 6: Voeg versleutelde gebruikers toe aan de database**
 
-### **Publieke toegang testen**
-1. Stuur een `GET`-verzoek naar `/api/cars`.
-2. Je hebt geen authenticatie nodig.
+Nu we wachtwoorden kunnen versleutelen, voegen we gebruikers toe aan de database met **data.sql**.
 
-### **Inloggen met Basic Auth**
-1. Kies in Postman onder `Authorization` het type `Basic Auth`.
-2. Voer je gebruikersnaam en wachtwoord in.
+1. Open of maak het bestand `src/main/resources/data.sql`.
+2. Voeg de volgende regels toe om een admin en een gewone gebruiker aan te maken:
 
-### **Acties testen**
-1. **Registratie toevoegen:** Stuur een `POST`-verzoek naar `/api/carregistrations` met een JSON-body:
-   ```json
-   {
-     "carId": 1,
-     "owner": "John Doe",
-     "registrationDate": "2023-01-01"
-   }
-   ```
-2. **Registratie verwijderen (admin):** Stuur een `DELETE`-verzoek naar `/api/carregistrations/{id}` met admin-credentials.
+<details>
+<summary>Uitwerking</summary>
 
-### **Foutmeldingen**
-Test zonder in te loggen of met verkeerde gegevens en controleer de `401 Unauthorized` foutmeldingen.
+```sql
+INSERT INTO users (username, password, role) VALUES ('admin', '$2a$10$RTmX/Behh84N9N7yQCRwOuaFbg21V8SlfaWBYFd0g4Ko8I6tFuWfy', 'ADMIN');
+INSERT INTO users (username, password, role) VALUES ('user', '$2a$10$RTmX/Behh84N9N7yQCRwOuaFbg21V8SlfaWBYFd0g4Ko8I6tFuWfy', 'USER');
+```
+</details>
+
+### **Wat gebeurt hier?**
+- We voegen een **admin** en een **gewone gebruiker** toe.
+- De wachtwoorden zijn al gehashed met **BCrypt**.
+- Dit zorgt ervoor dat gebruikers meteen beschikbaar zijn bij het opstarten van de applicatie.
+
+**Hint:** Gebruik de `PasswordEncoderUtil` uit stap 5 om je eigen wachtwoorden te versleutelen en toe te voegen.
+
+---
+
+Je hebt nu een helper gemaakt om wachtwoorden te versleutelen en gebruikers veilig in de database gezet. De volgende stap is het implementeren van gebruikersbeheer!
+
+
+
+
